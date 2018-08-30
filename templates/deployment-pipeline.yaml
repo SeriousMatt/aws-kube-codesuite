@@ -152,7 +152,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LocalBucket
-        # S3Key: Archive.zip
+        S3Key: Archive.zip
       Role: !GetAtt 'CodePipelineLambdaRole.Arn'
       Description: Update Kubernetes Deployment
       Timeout: 20
@@ -300,8 +300,8 @@ Resources:
                 Version: 1
                 Provider: CodeCommit
               Configuration:
-                RepositoryName: !GetAtt CodeCommitRepo.Name
-                BranchName: !Ref BranchName
+                RepositoryName: simple-node-app
+                BranchName: master
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
