@@ -4,11 +4,11 @@ Parameters:
 
   Name:
     Type: String
-    Default: codesuite-demo
+    Default: simple-node-app
 
   TemplateBucket:
     Type: String
-    Default: codesuite-demo-public
+    Default: simple-node-app-template-bucket
 
   BranchName:
     Type: String
@@ -16,19 +16,19 @@ Parameters:
 
   DeploymentName:
     Type: String
-    Default: codesuite-demo
+    Default: simple-node-app
 
-  ClusterEndpoint:
-    Type: String
+  # ClusterEndpoint:
+  #   Type: String
 
-  LocalBucket:
+  ArtifactBucket:
     Type: String
-    Description: This is created from the lambda-copy clouformation and passed to this template
+    Default: simple-node-app-bucket
 
 Resources:
 
-  ArtifactBucket:
-    Type: AWS::S3::Bucket
+  # ArtifactBucket:
+  #   Type: AWS::S3::Bucket
     #DeletionPolicy: Retain
 
   Repository:
@@ -89,76 +89,76 @@ Resources:
   #   Properties:
   #     RepositoryName: !Ref Name
 
-  LambdaCodePipelineExecutionPolicy:
-    DependsOn:
-      - CodePipelineLambdaRole
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: LambdaRolePolicy
-      Roles:
-        - !Ref 'CodePipelineLambdaRole'
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - ssm:Describe*
-              - ssm:Get*
-            Resource:
-              -  '*'
-          - Effect: Allow
-            Action:
-              - kms:Decrypt
-            Resource:
-              - '*'
-          - Effect: Allow
-            Action:
-              - logs:*
-            Resource:
-              - arn:aws:logs:*:*:*
-          - Effect: Allow
-            Action:
-              - codepipeline:PutJobSuccessResult
-              - codepipeline:PutJobFailureResult
-            Resource:
-              - '*'
-          - Effect: Allow
-            Action:
-              - s3:GetObject
-            Resource:
-              - !Sub arn:aws:s3:::${TemplateBucket}/*
-              - !Sub arn:aws:s3:::${ArtifactBucket}/*
-              - !Sub arn:aws:s3:::${LocalBucket}/*
+  # LambdaCodePipelineExecutionPolicy:
+  #   DependsOn:
+  #     - CodePipelineLambdaRole
+  #   Type: AWS::IAM::Policy
+  #   Properties:
+  #     PolicyName: LambdaRolePolicy
+  #     Roles:
+  #       - !Ref 'CodePipelineLambdaRole'
+  #     PolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - ssm:Describe*
+  #             - ssm:Get*
+  #           Resource:
+  #             -  '*'
+  #         - Effect: Allow
+  #           Action:
+  #             - kms:Decrypt
+  #           Resource:
+  #             - '*'
+  #         - Effect: Allow
+  #           Action:
+  #             - logs:*
+  #           Resource:
+  #             - arn:aws:logs:*:*:*
+  #         - Effect: Allow
+  #           Action:
+  #             - codepipeline:PutJobSuccessResult
+  #             - codepipeline:PutJobFailureResult
+  #           Resource:
+  #             - '*'
+  #         - Effect: Allow
+  #           Action:
+  #             - s3:GetObject
+  #           Resource:
+  #             - !Sub arn:aws:s3:::${TemplateBucket}/*
+  #             - !Sub arn:aws:s3:::${ArtifactBucket}/*
+  #             - !Sub arn:aws:s3:::${LocalBucket}/*
 
-  CodePipelineLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
+  # CodePipelineLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - lambda.amazonaws.com
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
 
-  LambdaKubernetesDeployment:
-    Type: AWS::Lambda::Function
-    DependsOn:
-      - CodePipelineLambdaRole
-      - LambdaCodePipelineExecutionPolicy
-    Properties:
-      Code:
-        S3Bucket: !Ref LocalBucket
-        # S3Key: Archive.zip
-      Role: !GetAtt 'CodePipelineLambdaRole.Arn'
-      Description: Update Kubernetes Deployment
-      Timeout: 20
-      Handler: kube-lambda.lambda_handler
-      Runtime: python3.6
-      MemorySize: 128
+  # LambdaKubernetesDeployment:
+  #   Type: AWS::Lambda::Function
+  #   DependsOn:
+  #     - CodePipelineLambdaRole
+  #     - LambdaCodePipelineExecutionPolicy
+  #   Properties:
+  #     Code:
+  #       S3Bucket: !Ref LocalBucket
+  #       # S3Key: Archive.zip
+  #     Role: !GetAtt 'CodePipelineLambdaRole.Arn'
+  #     Description: Update Kubernetes Deployment
+  #     Timeout: 20
+  #     Handler: kube-lambda.lambda_handler
+  #     Runtime: python3.6
+  #     MemorySize: 128
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -179,6 +179,7 @@ Resources:
             Statement:
               - Resource:
                   - !Sub arn:aws:s3:::${ArtifactBucket}/*
+                  - !Sub arn:aws:s3:::${ArtifactBucket}
                   - !Sub arn:aws:s3:::${TemplateBucket}
                   - !Sub arn:aws:s3:::${TemplateBucket}/*
                 Effect: Allow
@@ -199,6 +200,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - lambda:*
+      # RoleName: kube-pipeline-role
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -223,7 +225,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - ecr:GetAuthorizationToken
-              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+              - Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+                  - !Sub arn:aws:s3:::${TemplateBucket}
+                  - !Sub arn:aws:s3:::${TemplateBucket}/*
+
                 Effect: Allow
                 Action:
                   - s3:GetObject
@@ -278,8 +284,8 @@ Resources:
             Value: !Ref TemplateBucket
           - Name: DEPLOYMENT_NAME
             Value: !Ref DeploymentName
-          - Name: CLUSTER_ENDPOINT
-            Value: !Ref ClusterEndpoint
+          # - Name: CLUSTER_ENDPOINT
+          #   Value: !Ref ClusterEndpoint
       Name: !Ref AWS::StackName
       ServiceRole: !Ref CodeBuildServiceRole
 
@@ -289,7 +295,7 @@ Resources:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Ref ArtifactBucket
+        Location: simple-node-app-bucket
       Stages:
         - Name: Source
           Actions:
@@ -300,8 +306,8 @@ Resources:
                 Version: 1
                 Provider: CodeCommit
               Configuration:
-                RepositoryName: !GetAtt CodeCommitRepo.Name
-                BranchName: !Ref BranchName
+                RepositoryName: simple-node-app
+                BranchName: master
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
@@ -320,19 +326,19 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutput
               RunOrder: 1
-        - Name: Deploy
-          Actions:
-            - Name: UpdateDeployment
-              ActionTypeId:
-                Category: Invoke
-                Owner: AWS
-                Version: 1
-                Provider: Lambda
-              Configuration:
-                FunctionName: !Ref LambdaKubernetesDeployment
-              InputArtifacts:
-                - Name: BuildOutput
-              RunOrder: 1
+        # - Name: Deploy
+        #   Actions:
+        #     - Name: UpdateDeployment
+        #       ActionTypeId:
+        #         Category: Invoke
+        #         Owner: AWS
+        #         Version: 1
+        #         Provider: Lambda
+        #       Configuration:
+        #         FunctionName:  LambdaKubernetesDeployment
+        #       InputArtifacts:
+        #         - Name: BuildOutput
+        #       RunOrder: 1
 
 # Outputs:
 #
