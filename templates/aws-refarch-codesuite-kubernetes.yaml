@@ -6,11 +6,11 @@ Parameters:
 
   Name:
     Type: String
-    Default: codesuite-demo
+    Default: simple-node-app
 
   TemplateBucket:
     Type: String
-    Default: codesuite-demo-public
+    Default: simple-node-app-template-bucket
 
   BranchName:
     Type: String
@@ -18,20 +18,20 @@ Parameters:
 
   DeploymentName:
     Type: String
-    Default: codesuite-demo
+    Default: simple-node-app
 
   CA:
     Type: String
     NoEcho: true
 
-  ClientCert:
-    Type: String
-    NoEcho: true
-
-  ClientKey:
-    Type: String
-    NoEcho: true
-
+  # ClientCert:
+  #   Type: String
+  #   NoEcho: true
+  #
+  # ClientKey:
+  #   Type: String
+  #   NoEcho: true
+  #
   ClusterEndpoint:
     Type: String
 
@@ -42,18 +42,18 @@ Metadata:
         default: The API Endpoint for your Kubernetes ClusterEndpoint
       CA:
         default: Certificate Authority Data
-      ClientCert:
-        default: Client Certificate Data
-      ClientKey:
-        default: Client Key Data
+      # ClientCert:
+      #   default: Client Certificate Data
+      # ClientKey:
+      #   default: Client Key Data
     ParameterGroups:
       - Label:
           default: Kubernetes Cluster Details
         Parameters:
           - ClusterEndpoint
           - CA
-          - ClientCert
-          - ClientKey
+          # - ClientCert
+          # - ClientKey
       - Label:
           default: Advanced
         Parameters:
@@ -63,21 +63,21 @@ Metadata:
 
 Resources:
 
-  LambdaCopy:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: https://s3.amazonaws.com/codesuite-demo-public/lambda-copy.yaml
-      Parameters:
-        TemplateBucket: !Ref TemplateBucket
+  # LambdaCopy:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: https://s3.amazonaws.com/codesuite-demo-public/lambda-copy.yaml
+  #     Parameters:
+  #       TemplateBucket: !Ref TemplateBucket
 
-  SSMInject:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: https://s3.amazonaws.com/codesuite-demo-public/ssm-inject.yaml
-      Parameters:
-        CA: !Ref CA
-        ClientCert: !Ref ClientCert
-        ClientKey: !Ref ClientKey
+  # SSMInject:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: https://s3.amazonaws.com/codesuite-demo-public/ssm-inject.yaml
+  #     Parameters:
+  #       CA: !Ref CA
+  #       ClientCert: !Ref ClientCert
+  #       ClientKey: !Ref ClientKey
 
   Pipeline:
     Type: AWS::CloudFormation::Stack
@@ -89,4 +89,4 @@ Resources:
             BranchName: !Ref BranchName
             DeploymentName: !Ref DeploymentName
             ClusterEndpoint: !Ref ClusterEndpoint
-            LocalBucket: !GetAtt LambdaCopy.Outputs.S3Bucket
+            LocalBucket: simple-node-app-local-bucket
